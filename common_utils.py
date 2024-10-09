@@ -1,24 +1,13 @@
 ### THIS FILE CONTAINS COMMON FUNCTIONS, CLASSSES
 
-import tqdm
-import time
-import random 
+import random
+
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-
 import torch
-from torch import nn
-from torch.utils.data import Dataset
-from torch.utils.data import DataLoader
-
-from scipy.io import wavfile as wav
-
 from sklearn import preprocessing
-from sklearn.model_selection import KFold
+from torch import nn
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score, precision_score, recall_score, confusion_matrix
-
+from torch.nn import CrossEntropyLoss
 
 
 def split_dataset(df, columns_to_drop, test_size=0.2, random_state=42):
@@ -44,6 +33,13 @@ def preprocess_dataset(df_train, df_test):
     df_test_scaled = standard_scaler.transform(df_test)
 
     return df_train_scaled, df_test_scaled
+
+
+def preprocess(df, test_size=0.2, random_state=42):
+    df_train, y_train, df_test, y_test = split_dataset(df, ["filename"], test_size, random_state)
+    X_train_scaled, X_test_scaled = preprocess_dataset(df_train, df_test)
+    return X_train_scaled, y_train, X_test_scaled, y_test
+
 
 def set_seed(seed = 0):
     '''
@@ -73,3 +69,26 @@ class EarlyStopper:
             if self.counter >= self.patience:
                 return True
         return False
+    
+class MLP(nn.Module):
+
+    def __init__(self, no_features, no_hidden, no_labels):
+        super().__init__()
+        self.mlp_stack = nn.Sequential(
+            nn.Linear(no_features, no_hidden),
+            nn.ReLU(),
+            nn.Dropout(p=0.2),
+            nn.Linear(no_hidden, no_hidden),
+            nn.ReLU(),
+            nn.Dropout(p=0.2),
+            nn.Linear(no_hidden, no_hidden),
+            nn.ReLU(),
+            nn.Dropout(p=0.2),
+            nn.Linear(no_hidden, no_labels),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        return self.mlp_stack(x)
+
+loss_fn = CrossEntropyLoss()
