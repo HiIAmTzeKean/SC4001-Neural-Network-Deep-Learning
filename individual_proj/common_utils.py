@@ -1,7 +1,7 @@
 ### THIS FILE CONTAINS COMMON FUNCTIONS, CLASSSES
 
 import random
-
+from torch.utils.data import Dataset
 import numpy as np
 import torch
 from sklearn import preprocessing
@@ -36,7 +36,7 @@ def preprocess_dataset(df_train, df_test):
 
 
 def preprocess(df, test_size=0.2, random_state=42):
-    df_train, y_train, df_test, y_test = split_dataset(df, ["filename"], test_size, random_state)
+    df_train, y_train, df_test, y_test = split_dataset(df, ["filename","label"], test_size, random_state)
     X_train_scaled, X_test_scaled = preprocess_dataset(df_train, df_test)
     return X_train_scaled, y_train, X_test_scaled, y_test
 
@@ -90,5 +90,16 @@ class MLP(nn.Module):
 
     def forward(self, x):
         return self.mlp_stack(x)
+    
+class CustomDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = torch.tensor(X, dtype=torch.float32)
+        self.y = torch.tensor(y, dtype=torch.float32).unsqueeze(1)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
 
 loss_fn = CrossEntropyLoss()
